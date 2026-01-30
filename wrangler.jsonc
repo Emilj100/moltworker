@@ -3,6 +3,9 @@
   "name": "moltbot-sandbox",
   "main": "src/index.ts",
   "compatibility_date": "2025-05-06",
+  "routes": [
+    { "pattern": "moltbot.trainify-ai.com", "custom_domain": true }
+  ],
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true,

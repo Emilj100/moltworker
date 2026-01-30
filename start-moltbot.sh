@@ -187,8 +187,9 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
     config.channels.telegram = config.channels.telegram || {};
     config.channels.telegram.botToken = process.env.TELEGRAM_BOT_TOKEN;
     config.channels.telegram.enabled = true;
-    config.channels.telegram.dm = config.channels.telegram.dm || {};
     config.channels.telegram.dmPolicy = process.env.TELEGRAM_DM_POLICY || 'pairing';
+    // Remove invalid 'dm' key if it exists (was a bug in earlier versions)
+    delete config.channels.telegram.dm;
 }
 
 // Discord configuration
@@ -206,6 +207,17 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
     config.channels.slack.botToken = process.env.SLACK_BOT_TOKEN;
     config.channels.slack.appToken = process.env.SLACK_APP_TOKEN;
     config.channels.slack.enabled = true;
+}
+
+// Environment variables for Moltbot agent (GitHub, etc.)
+// Moltbot reads these from config.env.vars, not OS environment
+if (process.env.GITHUB_TOKEN || process.env.GH_TOKEN) {
+    config.env = config.env || {};
+    config.env.vars = config.env.vars || {};
+    const ghToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    config.env.vars.GITHUB_TOKEN = ghToken;
+    config.env.vars.GH_TOKEN = ghToken;
+    console.log('Added GITHUB_TOKEN to config.env.vars');
 }
 
 // Base URL override (e.g., for Cloudflare AI Gateway)
@@ -270,6 +282,21 @@ fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration updated successfully');
 console.log('Config:', JSON.stringify(config, null, 2));
 EOFNODE
+
+# ============================================================
+# GITHUB AUTHENTICATION
+# ============================================================
+if [ -n "$GITHUB_TOKEN" ]; then
+    echo "Authenticating GitHub CLI..."
+    if echo "$GITHUB_TOKEN" | gh auth login --with-token 2>/dev/null; then
+        echo "GitHub CLI authenticated successfully"
+        gh auth status 2>&1 || true
+    else
+        echo "GitHub CLI authentication failed"
+    fi
+else
+    echo "No GITHUB_TOKEN set, skipping GitHub CLI authentication"
+fi
 
 # ============================================================
 # START GATEWAY

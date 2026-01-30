@@ -53,6 +53,11 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
   if (env.SLACK_APP_TOKEN) envVars.SLACK_APP_TOKEN = env.SLACK_APP_TOKEN;
   if (env.CDP_SECRET) envVars.CDP_SECRET = env.CDP_SECRET;
   if (env.WORKER_URL) envVars.WORKER_URL = env.WORKER_URL;
+  // GitHub tokens - Moltbot checks GH_TOKEN, GITHUB_TOKEN, and COPILOT_GITHUB_TOKEN
+  if (env.GITHUB_TOKEN) {
+    envVars.GITHUB_TOKEN = env.GITHUB_TOKEN;
+    envVars.GH_TOKEN = env.GITHUB_TOKEN;  // Alias for compatibility
+  }
 
   return envVars;
 }
