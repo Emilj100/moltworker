@@ -383,7 +383,10 @@ app.all('*', async (c) => {
 
 /**
  * Scheduled handler for cron triggers.
- * Syncs moltbot config/state from container to R2 for persistence.
+ *
+ * This runs every 5 minutes and does two things:
+ * 1. Keeps the container warm by ensuring the gateway is running (prevents cold starts for Telegram webhooks)
+ * 2. Syncs moltbot config/state from container to R2 for persistence
  */
 async function scheduled(
   _event: ScheduledEvent,
@@ -393,9 +396,21 @@ async function scheduled(
   const options = buildSandboxOptions(env);
   const sandbox = getSandbox(env.Sandbox, 'moltbot', options);
 
+  // First, ensure the gateway is running - this keeps the container warm
+  // and prevents cold starts when Telegram webhooks arrive
+  console.log('[cron] Ensuring gateway is running (warmup)...');
+  try {
+    await ensureMoltbotGateway(sandbox, env);
+    console.log('[cron] Gateway is running');
+  } catch (err) {
+    console.error('[cron] Failed to start gateway:', err instanceof Error ? err.message : err);
+    // Continue to sync attempt anyway - the container might still be partially running
+  }
+
+  // Then sync to R2 for persistence
   console.log('[cron] Starting backup sync to R2...');
   const result = await syncToR2(sandbox, env);
-  
+
   if (result.success) {
     console.log('[cron] Backup sync completed successfully at', result.lastSync);
   } else {
